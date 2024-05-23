@@ -216,7 +216,7 @@ func (ruc *RecordUseCase) EthUserRecordHandle(ctx context.Context, ethUserRecord
 				bPrice, _ = strconv.ParseInt(vConfig.Value, 10, 64)
 			}
 			if "b_price_base" == vConfig.KeyName {
-				bPrice, _ = strconv.ParseInt(vConfig.Value, 10, 64)
+				bPriceBase, _ = strconv.ParseInt(vConfig.Value, 10, 64)
 			}
 			if "recommend_one_rate" == vConfig.KeyName {
 				recommendRate1, _ = strconv.ParseInt(vConfig.Value, 10, 64)
