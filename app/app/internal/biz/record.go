@@ -84,6 +84,7 @@ type RecordUseCase struct {
 
 type EthUserRecordRepo interface {
 	GetEthUserRecordListByHash(ctx context.Context, hash ...string) (map[string]*EthUserRecord, error)
+	GetEthUserRecordListByUserId(ctx context.Context, userId int64) (map[string]*EthUserRecord, error)
 	GetEthUserRecordListByHash2(ctx context.Context, hash ...string) (map[string]*EthUserRecord, error)
 	GetEthUserRecordLast(ctx context.Context) (int64, error)
 	GetEthUserRecordLast2(ctx context.Context) (int64, error)
@@ -307,6 +308,18 @@ func (ruc *RecordUseCase) EthUserRecordHandle(ctx context.Context, ethUserRecord
 						tmpMyTopUserRecommendUserId, _ := strconv.ParseInt(tmpRecommendUserIds[lastKey-i], 10, 64) // 最后一位是直推人
 						if 0 >= tmpMyTopUserRecommendUserId {
 							break
+						}
+
+						var (
+							ethRecord map[string]*EthUserRecord
+						)
+						ethRecord, err = ruc.ethUserRecordRepo.GetEthUserRecordListByUserId(ctx, tmpMyTopUserRecommendUserId)
+						if nil != err {
+							return err
+						}
+
+						if 0 >= len(ethRecord) {
+							continue
 						}
 
 						_, err = ruc.userBalanceRepo.RecommendLocationRewardNew8(ctx, tmpMyTopUserRecommendUserId, tmpMyRecommendAmountB, tmpMyRecommendAmount) // 推荐人奖励
