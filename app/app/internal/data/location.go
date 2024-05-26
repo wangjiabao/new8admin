@@ -1446,7 +1446,7 @@ func (lr *LocationRepo) GetLocationUserCount(ctx context.Context) int64 {
 	var (
 		count int64
 	)
-	lr.data.db.Table("location_new").Group("user_id").Count(&count)
+	lr.data.db.Table("eth_user_record").Group("user_id").Count(&count)
 	return count
 }
 
