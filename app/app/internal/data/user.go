@@ -630,7 +630,7 @@ func (u *UserRepo) GetUsers(ctx context.Context, b *biz.Pagination, address stri
 	}
 
 	if isLocation {
-		instance = instance.Joins("inner join location_new on user.id = location_new.user_id").Group("user.id")
+		instance = instance.Joins("inner join eth_user_record on user.id = eth_user_record.user_id").Group("user.id")
 	}
 
 	instance = instance.Count(&count)
@@ -2191,6 +2191,32 @@ func (ub *UserBalanceRepo) ExchangeBiw(ctx context.Context, userId int64, curren
 	}
 
 	return 0, nil
+}
+
+func (ub *UserBalanceRepo) GetEthUserRecordListByUserId(ctx context.Context, userId int64) (map[string]*biz.EthUserRecord, error) {
+	var ethUserRecord []*EthUserRecord
+	res := make(map[string]*biz.EthUserRecord, 0)
+	if err := ub.data.DB(ctx).Table("eth_user_record").Where("user_id=?", userId).Find(&ethUserRecord).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return res, errors.New(500, "USER RECOMMEND ERROR", err.Error())
+	}
+
+	for _, item := range ethUserRecord {
+		res[item.Hash] = &biz.EthUserRecord{
+			ID:       item.ID,
+			UserId:   item.UserId,
+			Hash:     item.Hash,
+			Status:   item.Status,
+			Type:     item.Type,
+			Amount:   item.Amount,
+			CoinType: item.CoinType,
+		}
+	}
+
+	return res, nil
 }
 
 // RecommendLocationRewardNew8 .

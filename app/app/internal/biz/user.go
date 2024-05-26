@@ -190,6 +190,7 @@ type ConfigRepo interface {
 }
 
 type UserBalanceRepo interface {
+	GetEthUserRecordListByUserId(ctx context.Context, userId int64) (map[string]*EthUserRecord, error)
 	GetPriceChangeConfig(ctx context.Context) (*PriceChange, error)
 	CreateUserBalance(ctx context.Context, u *User) (*UserBalance, error)
 	LocationReward(ctx context.Context, userId int64, amount int64, locationId int64, myLocationId int64, locationType string, status string) (int64, error)
@@ -558,42 +559,11 @@ func (uuc *UserUseCase) AdminUserList(ctx context.Context, req *v1.AdminUserList
 		userIds      []int64
 		userBalances map[int64]*UserBalance
 		count        int64
-		areaOne      int64
-		areaTwo      int64
-		areaThree    int64
-		areaFour     int64
-		areaFive     int64
-		configs      []*Config
 		err          error
 	)
 
 	res := &v1.AdminUserListReply{
 		Users: make([]*v1.AdminUserListReply_UserList, 0),
-	}
-
-	// 配置
-	configs, err = uuc.configRepo.GetConfigByKeys(ctx,
-		"area_one", "area_two", "area_three", "area_four", "area_five",
-	)
-	if nil != configs {
-		for _, vConfig := range configs {
-
-			if "area_one" == vConfig.KeyName {
-				areaOne, _ = strconv.ParseInt(vConfig.Value, 10, 64)
-			}
-			if "area_two" == vConfig.KeyName {
-				areaTwo, _ = strconv.ParseInt(vConfig.Value, 10, 64)
-			}
-			if "area_three" == vConfig.KeyName {
-				areaThree, _ = strconv.ParseInt(vConfig.Value, 10, 64)
-			}
-			if "area_four" == vConfig.KeyName {
-				areaFour, _ = strconv.ParseInt(vConfig.Value, 10, 64)
-			}
-			if "area_five" == vConfig.KeyName {
-				areaFive, _ = strconv.ParseInt(vConfig.Value, 10, 64)
-			}
-		}
 	}
 
 	users, err, count = uuc.repo.GetUsers(ctx, &Pagination{
@@ -620,97 +590,7 @@ func (uuc *UserUseCase) AdminUserList(ctx context.Context, req *v1.AdminUserList
 			userRecommend      *UserRecommend
 			myRecommendUsers   []*UserRecommend
 			myRecommendUserIds []int64
-			locations          []*Location
-			lastLevel          int64 = -1
-			out                int64
-			areaAll            int64
-			areaMax            int64
-			areaMin            int64
 		)
-		locations, err = uuc.locationRepo.GetLocationsByUserId(ctx, vUsers.ID)
-		if nil != locations && 0 < len(locations) {
-			for _, v := range locations {
-
-				if "running" == v.Status {
-					areaAll = v.Total + v.TotalThree + v.TotalTwo
-					if v.TotalTwo >= v.Total && v.TotalTwo >= v.TotalThree {
-						areaMax = v.TotalTwo
-						areaMin = v.Total + v.TotalThree
-					}
-					if v.Total >= v.TotalTwo && v.Total >= v.TotalThree {
-						areaMax = v.Total
-						areaMin = v.TotalTwo + v.TotalThree
-					}
-					if v.TotalThree >= v.Total && v.TotalThree >= v.TotalTwo {
-						areaMax = v.TotalThree
-						areaMin = v.TotalTwo + v.Total
-					}
-				}
-
-				if "stop" == v.Status {
-					out++
-				}
-				var tmpLastLevel int64
-				// 1大区
-				if v.Total >= v.TotalTwo && v.Total >= v.TotalThree {
-					if areaOne <= v.TotalTwo+v.TotalThree {
-						tmpLastLevel = 1
-					}
-					if areaTwo <= v.TotalTwo+v.TotalThree {
-						tmpLastLevel = 2
-					}
-					if areaThree <= v.TotalTwo+v.TotalThree {
-						tmpLastLevel = 3
-					}
-					if areaFour <= v.TotalTwo+v.TotalThree {
-						tmpLastLevel = 4
-					}
-					if areaFive <= v.TotalTwo+v.TotalThree {
-						tmpLastLevel = 5
-					}
-				} else if v.TotalTwo >= v.Total && v.TotalTwo >= v.TotalThree {
-					if areaOne <= v.Total+v.TotalThree {
-						tmpLastLevel = 1
-					}
-					if areaTwo <= v.Total+v.TotalThree {
-						tmpLastLevel = 2
-					}
-					if areaThree <= v.Total+v.TotalThree {
-						tmpLastLevel = 3
-					}
-					if areaFour <= v.Total+v.TotalThree {
-						tmpLastLevel = 4
-					}
-					if areaFive <= v.Total+v.TotalThree {
-						tmpLastLevel = 5
-					}
-				} else if v.TotalThree >= v.Total && v.TotalThree >= v.TotalTwo {
-					if areaOne <= v.TotalTwo+v.Total {
-						tmpLastLevel = 1
-					}
-					if areaTwo <= v.TotalTwo+v.Total {
-						tmpLastLevel = 2
-					}
-					if areaThree <= v.TotalTwo+v.Total {
-						tmpLastLevel = 3
-					}
-					if areaFour <= v.TotalTwo+v.Total {
-						tmpLastLevel = 4
-					}
-					if areaFive <= v.TotalTwo+v.Total {
-						tmpLastLevel = 5
-					}
-				}
-
-				if tmpLastLevel > lastLevel {
-					lastLevel = tmpLastLevel
-				}
-
-				if v.LastLevel > lastLevel {
-					lastLevel = v.LastLevel
-				}
-			}
-		}
 
 		userRecommend, err = uuc.urRepo.GetUserRecommendByUserId(ctx, vUsers.ID)
 		if nil != err {
@@ -723,17 +603,16 @@ func (uuc *UserUseCase) AdminUserList(ctx context.Context, req *v1.AdminUserList
 			for _, vMyRecommendUsers := range myRecommendUsers {
 
 				var (
-					tmpMyRecommendLocations []*Location
+					ethRecord map[string]*EthUserRecord
 				)
-				tmpMyRecommendLocations, err = uuc.locationRepo.GetLocationsByUserId(ctx, vMyRecommendUsers.UserId)
+				ethRecord, err = uuc.ubRepo.GetEthUserRecordListByUserId(ctx, vMyRecommendUsers.UserId)
 				if nil != err {
 					return nil, err
 				}
 
-				if 0 < len(tmpMyRecommendLocations) {
+				if 0 < len(ethRecord) {
 					myRecommendUserIds = append(myRecommendUserIds, vMyRecommendUsers.UserId)
 				}
-
 			}
 		}
 
@@ -747,12 +626,7 @@ func (uuc *UserUseCase) AdminUserList(ctx context.Context, req *v1.AdminUserList
 			Address:          vUsers.Address,
 			BalanceUsdt:      fmt.Sprintf("%.2f", float64(userBalances[vUsers.ID].BalanceUsdt)/float64(100000)),
 			BalanceDhb:       fmt.Sprintf("%.2f", float64(userBalances[vUsers.ID].BalanceDhb)/float64(100000)),
-			Vip:              lastLevel,
-			Out:              out,
 			HistoryRecommend: int64(len(myRecommendUserIds)),
-			AreaTotal:        areaAll,
-			AreaMax:          areaMax,
-			AreaMin:          areaMin,
 		})
 	}
 
