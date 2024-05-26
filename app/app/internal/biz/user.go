@@ -1033,6 +1033,18 @@ func (uuc *UserUseCase) AdminRecommendList(ctx context.Context, req *v1.AdminUse
 		}
 
 		var (
+			ethRecord map[string]*EthUserRecord
+		)
+		ethRecord, err = uuc.ubRepo.GetEthUserRecordListByUserId(ctx, v.UserId)
+		if nil != err {
+			return nil, err
+		}
+
+		if 0 >= len(ethRecord) {
+			continue
+		}
+
+		var (
 			myAllRecommends           []*UserRecommend
 			tmpMyAllRecommendsUserIds []int64
 			totalWithdraw             int64
