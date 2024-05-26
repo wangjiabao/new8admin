@@ -1553,6 +1553,8 @@ components:
                     type: string
                 amount:
                     type: string
+                amountB:
+                    type: string
                 address:
                     type: string
                 reason:
