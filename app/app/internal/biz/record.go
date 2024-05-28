@@ -257,6 +257,20 @@ func (ruc *RecordUseCase) EthUserRecordHandle(ctx context.Context, ethUserRecord
 			myUserRecommendUserId int64
 			tmpRecommendUserIds   []string
 		)
+
+		var (
+			ethRecordUser map[string]*EthUserRecord
+		)
+		ethRecordUser, err = ruc.ethUserRecordRepo.GetEthUserRecordListByUserId(ctx, v.UserId)
+		if nil != err {
+			fmt.Println(err)
+			continue
+		}
+
+		if 0 < len(ethRecordUser) {
+			continue
+		}
+
 		userRecommend, err = ruc.userRecommendRepo.GetUserRecommendByUserId(ctx, v.UserId)
 		if nil != err {
 			continue
