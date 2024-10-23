@@ -60,6 +60,32 @@ func (e *EthUserRecordRepo) GetEthUserRecordListByHash(ctx context.Context, hash
 	return res, nil
 }
 
+func (e *EthUserRecordRepo) GetEthUserRecordListByUserIds(ctx context.Context, userIds []int64) ([]*biz.EthUserRecord, error) {
+	var ethUserRecord []*EthUserRecord
+	res := make([]*biz.EthUserRecord, 0)
+	if err := e.data.DB(ctx).Table("eth_user_record").Where("user_id IN (?)", userIds).Find(&ethUserRecord).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return res, errors.New(500, "USER RECOMMEND ERROR", err.Error())
+	}
+
+	for _, item := range ethUserRecord {
+		res = append(res, &biz.EthUserRecord{
+			ID:       item.ID,
+			UserId:   item.UserId,
+			Hash:     item.Hash,
+			Status:   item.Status,
+			Type:     item.Type,
+			Amount:   item.Amount,
+			CoinType: item.CoinType,
+		})
+	}
+
+	return res, nil
+}
+
 func (e *EthUserRecordRepo) GetEthUserRecordListByUserId(ctx context.Context, userId int64) (map[string]*biz.EthUserRecord, error) {
 	var ethUserRecord []*EthUserRecord
 	res := make(map[string]*biz.EthUserRecord, 0)

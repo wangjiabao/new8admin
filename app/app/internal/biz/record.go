@@ -85,6 +85,7 @@ type RecordUseCase struct {
 type EthUserRecordRepo interface {
 	GetEthUserRecordListByHash(ctx context.Context, hash ...string) (map[string]*EthUserRecord, error)
 	GetEthUserRecordListByUserId(ctx context.Context, userId int64) (map[string]*EthUserRecord, error)
+	GetEthUserRecordListByUserIds(ctx context.Context, userIds []int64) ([]*EthUserRecord, error)
 	GetEthUserRecordListByHash2(ctx context.Context, hash ...string) (map[string]*EthUserRecord, error)
 	GetEthUserRecordLast(ctx context.Context) (int64, error)
 	GetEthUserRecordLast2(ctx context.Context) (int64, error)
@@ -204,8 +205,8 @@ func (ruc *RecordUseCase) EthUserRecordHandle(ctx context.Context, ethUserRecord
 		recommendRate6 int64
 		recommendRate7 int64
 		recommendRate8 int64
-		recommendRate9 int64
-		recommendBase  = int64(1000)
+		//recommendRate9 int64
+		recommendBase = int64(1000)
 	)
 	// 配置
 	configs, _ = ruc.configRepo.GetConfigByKeys(ctx, "b_price", "b_price_base",
@@ -243,9 +244,9 @@ func (ruc *RecordUseCase) EthUserRecordHandle(ctx context.Context, ethUserRecord
 			if "recommend_eight_rate" == vConfig.KeyName {
 				recommendRate8, _ = strconv.ParseInt(vConfig.Value, 10, 64)
 			}
-			if "recommend_nine_rate" == vConfig.KeyName {
-				recommendRate9, _ = strconv.ParseInt(vConfig.Value, 10, 64)
-			}
+			//if "recommend_nine_rate" == vConfig.KeyName {
+			//	recommendRate9, _ = strconv.ParseInt(vConfig.Value, 10, 64)
+			//}
 		}
 	}
 
@@ -294,31 +295,6 @@ func (ruc *RecordUseCase) EthUserRecordHandle(ctx context.Context, ethUserRecord
 							break
 						}
 
-						var tmpMyRecommendAmount int64
-						if 0 == i { // 当前用户被此人直推
-							tmpMyRecommendAmount = v.RelAmount * recommendRate1 / recommendBase / 2
-						} else if 1 == i {
-							tmpMyRecommendAmount = v.RelAmount * recommendRate2 / recommendBase / 2
-						} else if 2 == i {
-							tmpMyRecommendAmount = v.RelAmount * recommendRate3 / recommendBase / 2
-						} else if 3 == i {
-							tmpMyRecommendAmount = v.RelAmount * recommendRate4 / recommendBase / 2
-						} else if 4 == i {
-							tmpMyRecommendAmount = v.RelAmount * recommendRate5 / recommendBase / 2
-						} else if 5 == i {
-							tmpMyRecommendAmount = v.RelAmount * recommendRate6 / recommendBase / 2
-						} else if 6 == i {
-							tmpMyRecommendAmount = v.RelAmount * recommendRate7 / recommendBase / 2
-						} else if 7 == i {
-							tmpMyRecommendAmount = v.RelAmount * recommendRate8 / recommendBase / 2
-						} else if 8 == i {
-							tmpMyRecommendAmount = v.RelAmount * recommendRate9 / recommendBase / 2
-						} else {
-							continue
-						}
-
-						tmpMyRecommendAmountB := tmpMyRecommendAmount * bPriceBase / bPrice
-
 						tmpMyTopUserRecommendUserId, _ := strconv.ParseInt(tmpRecommendUserIds[lastKey-i], 10, 64) // 最后一位是直推人
 						if 0 >= tmpMyTopUserRecommendUserId {
 							break
@@ -335,6 +311,83 @@ func (ruc *RecordUseCase) EthUserRecordHandle(ctx context.Context, ethUserRecord
 						if 0 >= len(ethRecord) {
 							continue
 						}
+
+						// 直推人的信息
+						var (
+							recommendUserRecommend *UserRecommend
+							recommendUsers         []*UserRecommend
+							userIds                []int64
+						)
+						recommendUserRecommend, err = ruc.userRecommendRepo.GetUserRecommendByUserId(ctx, tmpMyTopUserRecommendUserId)
+						if nil != err {
+							fmt.Println("无推荐人信息", v, tmpMyTopUserRecommendUserId)
+							continue
+						}
+						tmpMyCode := recommendUserRecommend.RecommendCode + "D" + strconv.FormatInt(tmpMyTopUserRecommendUserId, 10)
+						recommendUsers, err = ruc.userRecommendRepo.GetUserRecommendByCode(ctx, tmpMyCode)
+						if nil != err {
+							//fmt.Println("无推荐人信息,code", v, recommendUserRecommend, tmpMyCode)
+							continue
+						}
+						if 0 >= len(recommendUsers) {
+							//fmt.Println("无推荐人信息,code,2", v, recommendUserRecommend, len(recommendUsers), tmpMyCode)
+							continue
+						}
+						for _, vRecommendUsers := range recommendUsers {
+							userIds = append(userIds, vRecommendUsers.UserId)
+						}
+						var (
+							ethRecordUsers []*EthUserRecord
+						)
+						ethRecordUsers, err = ruc.ethUserRecordRepo.GetEthUserRecordListByUserIds(ctx, userIds)
+						if nil != err {
+							fmt.Println(err)
+							continue
+						}
+
+						var tmpMyRecommendAmount int64
+						if 0 == i { // 当前用户被此人直推
+							tmpMyRecommendAmount = v.RelAmount * recommendRate1 / recommendBase / 2
+						} else if 1 == i {
+							if 2 > len(ethRecordUsers) {
+								continue
+							}
+							tmpMyRecommendAmount = v.RelAmount * recommendRate2 / recommendBase / 2
+						} else if 2 == i {
+							if 3 > len(ethRecordUsers) {
+								continue
+							}
+							tmpMyRecommendAmount = v.RelAmount * recommendRate3 / recommendBase / 2
+						} else if 3 == i {
+							if 4 > len(ethRecordUsers) {
+								continue
+							}
+							tmpMyRecommendAmount = v.RelAmount * recommendRate4 / recommendBase / 2
+						} else if 4 == i {
+							if 5 > len(ethRecordUsers) {
+								continue
+							}
+							tmpMyRecommendAmount = v.RelAmount * recommendRate5 / recommendBase / 2
+						} else if 5 == i {
+							if 6 > len(ethRecordUsers) {
+								continue
+							}
+							tmpMyRecommendAmount = v.RelAmount * recommendRate6 / recommendBase / 2
+						} else if 6 == i {
+							if 7 > len(ethRecordUsers) {
+								continue
+							}
+							tmpMyRecommendAmount = v.RelAmount * recommendRate7 / recommendBase / 2
+						} else if 7 == i {
+							if 8 > len(ethRecordUsers) {
+								continue
+							}
+							tmpMyRecommendAmount = v.RelAmount * recommendRate8 / recommendBase / 2
+						} else {
+							continue
+						}
+
+						tmpMyRecommendAmountB := tmpMyRecommendAmount * bPriceBase / bPrice
 
 						_, err = ruc.userBalanceRepo.RecommendLocationRewardNew8(ctx, tmpMyTopUserRecommendUserId, tmpMyRecommendAmountB, tmpMyRecommendAmount) // 推荐人奖励
 						if nil != err {

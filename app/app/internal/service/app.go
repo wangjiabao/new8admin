@@ -89,7 +89,7 @@ func (a *AppService) Deposit(ctx context.Context, req *v1.DepositRequest) (*v1.D
 
 		// 0x3D459970d28bd77E6E1533C65f29155877144c37 test
 		// 0x4DdAF64F2FA1eB1bcb26AB583b2Ea0adfFF5A928 rel
-		userLength, err = getUserLength("0xbc4EAB685C0F29a21695Dac27Ca9DDB17aB93a8C")
+		userLength, err = getUserLength("0x0bfbeC0ea79125979C3454F7FA67187943448b46")
 		if nil != err {
 			fmt.Println(err)
 		}
@@ -108,7 +108,7 @@ func (a *AppService) Deposit(ctx context.Context, req *v1.DepositRequest) (*v1.D
 
 		// 0x3D459970d28bd77E6E1533C65f29155877144c37 test
 		// 0x4DdAF64F2FA1eB1bcb26AB583b2Ea0adfFF5A928 rel
-		depositUsdtResult, err = getUserInfo(last, userLength-1, "0xbc4EAB685C0F29a21695Dac27Ca9DDB17aB93a8C")
+		depositUsdtResult, err = getUserInfo(last, userLength-1, "0x0bfbeC0ea79125979C3454F7FA67187943448b46")
 		if nil != err {
 			break
 		}
@@ -1411,7 +1411,7 @@ func getUserInfo(start int64, end int64, address string) (map[string]int64, erro
 		bals  []common.Address
 		bals2 []*big.Int
 	)
-	for i := 0; i < 5; i++ {
+	for j := 0; j < 15; j++ {
 		client, err := ethclient.Dial(url1)
 		if err != nil {
 			return nil, err
@@ -1425,14 +1425,46 @@ func getUserInfo(start int64, end int64, address string) (map[string]int64, erro
 
 		bals, err = instance.GetUsersByIndex(&bind.CallOpts{}, new(big.Int).SetInt64(start), new(big.Int).SetInt64(end))
 		if err != nil {
+			if 0 == j {
+				url1 = "https://binance.llamarpc.com/"
+			} else if 1 == j {
+				url1 = "https://bscrpc.com/"
+			} else if 2 == j {
+				url1 = "https://bsc-pokt.nodies.app/"
+			} else if 3 == j {
+				url1 = "https://data-seed-prebsc-1-s3.binance.org:8545/"
+			} else if 4 == j {
+				url1 = "https://bsc-dataseed.binance.org/"
+			} else if 5 == j {
+				url1 = "https://bsc-pokt.nodies.app/"
+			} else if 6 == j {
+				url1 = "https://bsc-dataseed.bnbchain.org/"
+			} else if 7 == j {
+				url1 = "https://bsc-dataseed3.bnbchain.org/"
+			} else if 8 == j {
+				url1 = "https://bsc.drpc.org/"
+			} else if 9 == j {
+				url1 = "https://bsc-dataseed3.bnbchain.org/"
+			} else if 10 == j {
+				url1 = "https://bsc-dataseed4.ninicoin.io/"
+			} else if 11 == j {
+				url1 = "https://bsc.meowrpc.com/"
+			} else if 12 == j {
+				url1 = "https://bsc-rpc.publicnode.com/"
+			} else if 13 == j {
+				url1 = "https://bsc.meowrpc.com/"
+			} else if 14 == j {
+				url1 = "https://bsc-dataseed3.defibit.io/"
+			}
+
 			fmt.Println(err)
-			//url1 = "https://bsc-dataseed4.binance.org"
 			continue
 		}
+
 		break
 	}
 
-	for i := 0; i < 5; i++ {
+	for j := 0; j < 15; j++ {
 		client, err := ethclient.Dial(url1)
 		if err != nil {
 			return nil, err
@@ -1446,10 +1478,42 @@ func getUserInfo(start int64, end int64, address string) (map[string]int64, erro
 
 		bals2, err = instance.GetUsersAmountByIndex(&bind.CallOpts{}, new(big.Int).SetInt64(start), new(big.Int).SetInt64(end))
 		if err != nil {
+			if 0 == j {
+				url1 = "https://binance.llamarpc.com/"
+			} else if 1 == j {
+				url1 = "https://bscrpc.com/"
+			} else if 2 == j {
+				url1 = "https://bsc-pokt.nodies.app/"
+			} else if 3 == j {
+				url1 = "https://data-seed-prebsc-1-s3.binance.org:8545/"
+			} else if 4 == j {
+				url1 = "https://bsc-dataseed.binance.org/"
+			} else if 5 == j {
+				url1 = "https://bsc-pokt.nodies.app/"
+			} else if 6 == j {
+				url1 = "https://bsc-dataseed.bnbchain.org/"
+			} else if 7 == j {
+				url1 = "https://bsc-dataseed3.bnbchain.org/"
+			} else if 8 == j {
+				url1 = "https://bsc.drpc.org/"
+			} else if 9 == j {
+				url1 = "https://bsc-dataseed3.bnbchain.org/"
+			} else if 10 == j {
+				url1 = "https://bsc-dataseed4.ninicoin.io/"
+			} else if 11 == j {
+				url1 = "https://bsc.meowrpc.com/"
+			} else if 12 == j {
+				url1 = "https://bsc-rpc.publicnode.com/"
+			} else if 13 == j {
+				url1 = "https://bsc.meowrpc.com/"
+			} else if 14 == j {
+				url1 = "https://bsc-dataseed3.defibit.io/"
+			}
+
 			fmt.Println(err)
-			//url1 = "https://bsc-dataseed4.binance.org"
 			continue
 		}
+
 		break
 	}
 
